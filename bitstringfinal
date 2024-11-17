@@ -1,0 +1,178 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Function to convert an actual set to a bit string
+int actualSetToBitString(int setSize, int setElements[], int universalSetSize, int universalSet[]) {
+    int bitString = 0;
+    for (int i = 0; i < setSize; i++) {
+        // Find the index of the element in the universal set
+        int elementValid = 0;
+        for (int j = 0; j < universalSetSize; j++) {
+            if (setElements[i] == universalSet[j]) {
+                // Set the bit corresponding to the element in the universal set
+                bitString |= (1 << j);
+                elementValid = 1;
+                break;
+            }
+        }
+        if (!elementValid) {
+            printf("Warning: Element %d is not in the universal set.\n", setElements[i]);
+        }
+    }
+    return bitString;
+}
+
+// Function to display the set as a bit string and actual elements
+void displaySet(int set, int universalSetSize, int universalSet[]) {
+    // Display bit string
+    printf("Bitstring: ");
+    for (int i = universalSetSize - 1; i >= 0; i--) {
+        printf("%d", (set >> i) & 1);  // Print each bit in the bit string
+    }
+
+    // Display actual set elements
+    printf(" | Actual set: { ");
+    for (int i = 0; i < universalSetSize; i++) {  // Loop through all possible elements
+        if (set & (1 << i)) {  // Check if the ith bit is set
+            printf("%d ", universalSet[i]);  // If the bit is set, print the corresponding element from the universal set
+        }
+    }
+    printf("}\n");
+}
+
+// Union operation (A ∪ B)
+int setUnion(int setA, int setB) {
+    return setA | setB;  // Use bitwise OR to combine the sets
+}
+
+// Intersection operation (A ∩ B)
+int setIntersection(int setA, int setB) {
+    return setA & setB;  // Use bitwise AND to find common elements
+}
+
+// Difference operation (A - B)
+int setDifference(int setA, int setB) {
+    return setA & ~setB;  // Use bitwise AND with NOT to remove elements of B from A
+}
+
+// Complement operation (~A)
+int setComplement(int set, int universalSetSize) {
+    int universalSet = (1 << universalSetSize) - 1;  // Create a bit string with all bits set
+    return ~set & universalSet;  // Use bitwise NOT and AND to get the complement
+}
+
+// Function to input a set with validation
+void inputSet(int setElements[], int *setSize, int universalSetSize, int universalSet[], const char *setName) {
+    int element;
+    
+    // Input number of elements in the set
+    do {
+        printf("Enter the number of elements in %s (between 0 and %d): ", setName, universalSetSize);
+        scanf("%d", setSize);
+        if (*setSize < 0 || *setSize > universalSetSize) {
+            printf("Invalid size! The size must be between 0 and %d.\n", universalSetSize);
+        }
+    } while (*setSize < 0 || *setSize > universalSetSize);
+
+    // Input set elements with validation
+    for (int i = 0; i < *setSize; i++) {
+        while (1) {
+            printf("Enter element %d of %s: ", i + 1, setName);
+            scanf("%d", &element);
+
+            // Check if the element is within the universal set
+            int isValid = 0;
+            for (int j = 0; j < universalSetSize; j++) {
+                if (element == universalSet[j]) {
+                    isValid = 1;
+                    break;
+                }
+            }
+
+            if (isValid) {
+                setElements[i] = element;  // Valid element, store it
+                break;  // Break out of loop if valid
+            } else {
+                printf("Invalid element! Please enter a value that is part of the universal set.\n");
+            }
+        }
+    }
+}
+
+int main() {
+    int universalSetSize, setASize, setBSize;
+
+    // Input the universal set size
+    printf("Enter the size of the universal set: ");
+    scanf("%d", &universalSetSize);
+
+    if (universalSetSize <= 0) {
+        printf("Invalid universal set size! It must be greater than 0.\n");
+        return 1;  // Exit the program if the universal set size is invalid
+    }
+
+    // Dynamically allocate memory for the universal set and its elements
+    int *universalSet = (int *)malloc(universalSetSize * sizeof(int));
+    if (universalSet == NULL) {
+        printf("Memory allocation failed for universal set!\n");
+        return 1;
+    }
+
+    // Input elements of the universal set
+    printf("Enter the elements of the universal set:\n");
+    for (int i = 0; i < universalSetSize; i++) {
+        printf("Element %d: ", i + 1);
+        scanf("%d", &universalSet[i]);
+    }
+
+    // Dynamically allocate memory for sets A and B
+    int *setAElements = (int *)malloc(universalSetSize * sizeof(int));
+    int *setBElements = (int *)malloc(universalSetSize * sizeof(int));
+
+    if (setAElements == NULL || setBElements == NULL) {
+        printf("Memory allocation failed for sets A and B!\n");
+        free(universalSet);  // Free previously allocated memory
+        return 1;
+    }
+
+    // Input Set A with validation
+    inputSet(setAElements, &setASize, universalSetSize, universalSet, "Set A");
+
+    // Input Set B with validation
+    inputSet(setBElements, &setBSize, universalSetSize, universalSet, "Set B");
+
+    // Convert sets to bit strings
+    int setA = actualSetToBitString(setASize, setAElements, universalSetSize, universalSet);
+    int setB = actualSetToBitString(setBSize, setBElements, universalSetSize, universalSet);
+
+    // Display the sets
+    printf("\nSet A:\n");
+    displaySet(setA, universalSetSize, universalSet);
+
+    printf("Set B:\n");
+    displaySet(setB, universalSetSize, universalSet);
+
+    // Perform operations
+    int unionSet = setUnion(setA, setB);
+    printf("\nUnion (A ∪ B):\n");
+    displaySet(unionSet, universalSetSize, universalSet);
+
+    int intersectionSet = setIntersection(setA, setB);
+    printf("Intersection (A ∩ B):\n");
+    displaySet(intersectionSet, universalSetSize, universalSet);
+
+    int differenceSet = setDifference(setA, setB);
+    printf("Difference (A - B):\n");
+    displaySet(differenceSet, universalSetSize, universalSet);
+
+    int complementSet = setComplement(setA, universalSetSize);
+    printf("Complement (~A):\n");
+    displaySet(complementSet, universalSetSize, universalSet);
+
+    // Free dynamically allocated memory
+    free(universalSet);
+    free(setAElements);
+    free(setBElements);
+
+    return 0;
+}
